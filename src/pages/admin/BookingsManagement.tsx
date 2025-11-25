@@ -19,6 +19,13 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 const BookingsManagement = () => {
   const navigate = useNavigate();
@@ -86,7 +93,7 @@ const BookingsManagement = () => {
         };
       }));
 
-      return bookingsData;
+      return bookingsData as Booking[];
     },
   });
 
@@ -150,6 +157,7 @@ const BookingsManagement = () => {
     profiles?: { full_name: string; email: string };
     trips?: { title: string; location: string };
     trip_schedules?: { start_date: any; end_date: any };
+    travelers?: any[];
   }
 
   const confirmedBookings = bookings?.filter((b: Booking) => b.booking_status === "confirmed");
@@ -165,6 +173,7 @@ const BookingsManagement = () => {
             <TableHead>Trip</TableHead>
             <TableHead>Date</TableHead>
             <TableHead>People</TableHead>
+            <TableHead>Travelers</TableHead>
             <TableHead>Amount</TableHead>
             <TableHead>Payment</TableHead>
             <TableHead>Status</TableHead>
@@ -172,97 +181,133 @@ const BookingsManagement = () => {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {data?.map((booking: any) => (
-            <TableRow key={booking.id}>
-              <TableCell>
-                <div>
-                  <p className="font-medium">{booking.profiles?.full_name || "N/A"}</p>
-                  <p className="text-sm text-muted-foreground">{booking.profiles?.email}</p>
-                </div>
-              </TableCell>
-              <TableCell>
-                <div>
-                  <p className="font-medium">{booking.trips?.title}</p>
-                  <p className="text-sm text-muted-foreground">{booking.trips?.location}</p>
-                </div>
-              </TableCell>
-              <TableCell>
-                {booking.trip_schedules?.start_date &&
-                  format(booking.trip_schedules.start_date.toDate ? booking.trip_schedules.start_date.toDate() : new Date(booking.trip_schedules.start_date), "MMM dd, yyyy")}
-              </TableCell>
-              <TableCell>{booking.number_of_people}</TableCell>
-              <TableCell className="font-semibold">₹{(booking.total_amount || 0).toLocaleString()}</TableCell>
-              <TableCell>
-                <Badge variant={booking.payment_method === "cod" ? "outline" : "default"}>
-                  {booking.payment_method === "cod" ? "COD" : "Online"}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                <Badge
-                  variant={
-                    booking.booking_status === "confirmed"
-                      ? "default"
-                      : booking.booking_status === "rejected"
-                        ? "destructive"
-                        : "secondary"
-                  }
-                >
-                  {booking.booking_status}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-right">
-                <div className="flex justify-end space-x-2">
-                  {booking.booking_status === "pending" && (
-                    <>
+          {data?.map((booking: any) => {
+            const travelers = booking.travelers || [];
+            const maleCount = travelers.filter((t: any) => t.gender === 'male').length;
+            const femaleCount = travelers.filter((t: any) => t.gender === 'female').length;
+            const otherCount = travelers.filter((t: any) => t.gender === 'other').length;
+
+            return (
+              <TableRow key={booking.id}>
+                <TableCell>
+                  <div>
+                    <p className="font-medium">{booking.profiles?.full_name || "N/A"}</p>
+                    <p className="text-sm text-muted-foreground">{booking.profiles?.email}</p>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div>
+                    <p className="font-medium">{booking.trips?.title}</p>
+                    <p className="text-sm text-muted-foreground">{booking.trips?.location}</p>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  {booking.trip_schedules?.start_date &&
+                    format(booking.trip_schedules.start_date.toDate ? booking.trip_schedules.start_date.toDate() : new Date(booking.trip_schedules.start_date), "MMM dd, yyyy")}
+                </TableCell>
+                <TableCell>{booking.number_of_people}</TableCell>
+                <TableCell>
+                  <div className="flex flex-col gap-1">
+                    <span className="text-xs">M: {maleCount}, F: {femaleCount}{otherCount > 0 ? `, O: ${otherCount}` : ''}</span>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button variant="link" className="h-auto p-0 text-xs">View Details</Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                        <DialogHeader>
+                          <DialogTitle>Traveler Details</DialogTitle>
+                        </DialogHeader>
+                        <div className="mt-4 space-y-4">
+                          {travelers.map((traveler: any, index: number) => (
+                            <div key={index} className="p-4 border rounded-md">
+                              <h4 className="font-semibold mb-2">Traveler {index + 1} {index === 0 && "(Primary)"}</h4>
+                              <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div><span className="font-medium">Name:</span> {traveler.name}</div>
+                                <div><span className="font-medium">Age:</span> {traveler.age}</div>
+                                <div><span className="font-medium">Gender:</span> {traveler.gender}</div>
+                                {traveler.phone && <div><span className="font-medium">Phone:</span> {traveler.phone}</div>}
+                                {traveler.aadhaar && <div><span className="font-medium">Aadhaar:</span> {traveler.aadhaar}</div>}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </TableCell>
+                <TableCell className="font-semibold">₹{(booking.total_amount || 0).toLocaleString()}</TableCell>
+                <TableCell>
+                  <Badge variant={booking.payment_method === "cod" ? "outline" : "default"}>
+                    {booking.payment_method === "cod" ? "COD" : "Online"}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge
+                    variant={
+                      booking.booking_status === "confirmed"
+                        ? "default"
+                        : booking.booking_status === "rejected"
+                          ? "destructive"
+                          : "secondary"
+                    }
+                  >
+                    {booking.booking_status}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end space-x-2">
+                    {booking.booking_status === "pending" && (
+                      <>
+                        <Button
+                          size="sm"
+                          onClick={() =>
+                            updateBookingStatus.mutate({
+                              bookingId: booking.id,
+                              status: "confirmed",
+                              userId: booking.user_id,
+                              tripTitle: booking.trips?.title || "Trip"
+                            })
+                          }
+                        >
+                          Approve
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() =>
+                            updateBookingStatus.mutate({
+                              bookingId: booking.id,
+                              status: "rejected",
+                              userId: booking.user_id,
+                              tripTitle: booking.trips?.title || "Trip"
+                            })
+                          }
+                        >
+                          Reject
+                        </Button>
+                      </>
+                    )}
+                    {booking.booking_status === "confirmed" && (
                       <Button
+                        variant="outline"
                         size="sm"
                         onClick={() =>
                           updateBookingStatus.mutate({
                             bookingId: booking.id,
-                            status: "confirmed",
+                            status: "completed",
                             userId: booking.user_id,
                             tripTitle: booking.trips?.title || "Trip"
                           })
                         }
                       >
-                        Approve
+                        Mark Completed
                       </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() =>
-                          updateBookingStatus.mutate({
-                            bookingId: booking.id,
-                            status: "rejected",
-                            userId: booking.user_id,
-                            tripTitle: booking.trips?.title || "Trip"
-                          })
-                        }
-                      >
-                        Reject
-                      </Button>
-                    </>
-                  )}
-                  {booking.booking_status === "confirmed" && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        updateBookingStatus.mutate({
-                          bookingId: booking.id,
-                          status: "completed",
-                          userId: booking.user_id,
-                          tripTitle: booking.trips?.title || "Trip"
-                        })
-                      }
-                    >
-                      Mark Completed
-                    </Button>
-                  )}
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
+                    )}
+                  </div>
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
     </div>

@@ -8,6 +8,7 @@ import { doc, getDoc, collection, query, where, getDocs, orderBy } from "firebas
 import { useParams, useNavigate } from "react-router-dom";
 import { MapPin, Calendar, Users, Check, X } from "lucide-react";
 import { format } from "date-fns";
+import ItineraryTimeline from "@/components/ItineraryTimeline";
 
 const TripDetails = () => {
   const { id } = useParams();
@@ -39,12 +40,15 @@ const TripDetails = () => {
       const q = query(
         schedulesRef,
         where("trip_id", "==", id),
-        where("is_active", "==", true),
-        where("start_date", ">=", new Date().toISOString().split("T")[0])
+        where("is_active", "==", true)
       );
 
       const querySnapshot = await getDocs(q);
-      let schedulesData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any[];
+      const today = new Date().toISOString().split("T")[0];
+
+      let schedulesData = querySnapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }) as any)
+        .filter((schedule: any) => schedule.start_date >= today) as any[];
 
       // Sort by start_date
       schedulesData.sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime());
@@ -89,7 +93,7 @@ const TripDetails = () => {
           <div className="lg:col-span-2">
             <div className="mb-4 flex items-center justify-between">
               <h1 className="text-4xl font-bold">{trip.title}</h1>
-              {trip.categories && (
+              {trip.categories && trip.categories.name !== 'Unknown' && (
                 <Badge className="text-lg">{trip.categories.name}</Badge>
               )}
             </div>
@@ -105,28 +109,31 @@ const TripDetails = () => {
               </div>
               <div className="flex items-center">
                 <Users className="mr-2 h-5 w-5" />
-                Max {trip.max_seats} Guests
+                {schedules && schedules.length > 0 ? (
+                  <span className="text-green-600 font-medium">
+                    {schedules[0].available_seats} Seats Left
+                  </span>
+                ) : (
+                  <span>Max {trip.max_seats} Guests</span>
+                )}
               </div>
             </div>
 
-            <p className="mb-8 text-lg">{trip.description}</p>
+            <div
+              className="mb-8 text-lg prose prose-lg max-w-none"
+              dangerouslySetInnerHTML={{ __html: trip.description }}
+            />
 
             <Card className="mb-8">
               <CardHeader>
-                <CardTitle>Itinerary</CardTitle>
+                <CardTitle className="text-2xl font-bold">Trip Itinerary</CardTitle>
+                <p className="text-muted-foreground text-sm">Your day-by-day adventure plan</p>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {Object.entries(itinerary).length > 0 ? (
-                  Object.entries(itinerary).map(([day, description]) => (
-                    <div key={day}>
-                      <h3 className="mb-1 font-semibold capitalize">
-                        {day.replace("day", "Day ")}
-                      </h3>
-                      <p className="text-muted-foreground">{description}</p>
-                    </div>
-                  ))
+              <CardContent className="pt-6">
+                {trip.itinerary ? (
+                  <ItineraryTimeline itinerary={typeof trip.itinerary === 'string' ? trip.itinerary : "Itinerary details available."} />
                 ) : (
-                  <p className="text-muted-foreground">No itinerary details available.</p>
+                  <p className="text-muted-foreground text-center py-8">No itinerary details available.</p>
                 )}
               </CardContent>
             </Card>
@@ -192,14 +199,26 @@ const TripDetails = () => {
                 </div>
 
                 <div>
-                  <h3 className="mb-2 font-semibold">Meeting Point</h3>
-                  <p className="text-sm text-muted-foreground">{trip.meeting_point || "To be decided"}</p>
+                  <h3 className="mb-2 font-semibold">Pickup Point & Time</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {trip.pickup_point || "To be decided"}
+                    {trip.pickup_time && ` at ${trip.pickup_time}`}
+                  </p>
                 </div>
 
                 <div>
                   <h3 className="mb-2 font-semibold">Trip Date</h3>
                   <p className="text-sm text-muted-foreground">
-                    {trip.start_date ? format(new Date(trip.start_date), "MMMM dd, yyyy") : "Date TBD"}
+                    {schedules && schedules.length > 0 ? (
+                      <>
+                        {format(new Date(schedules[0].start_date), "MMMM dd, yyyy")}
+                        <span className="block text-green-600 font-medium mt-1">
+                          ({schedules[0].available_seats} seats available)
+                        </span>
+                      </>
+                    ) : (
+                      trip.start_date ? format(new Date(trip.start_date), "MMMM dd, yyyy") : "Date TBD"
+                    )}
                   </p>
                 </div>
 
@@ -207,16 +226,21 @@ const TripDetails = () => {
                   className="w-full"
                   size="lg"
                   onClick={() => navigate(`/booking/${trip.id}`)}
-                  disabled={!trip.is_active}
+                  disabled={!trip.is_active || new Date(trip.start_date) < new Date(new Date().toISOString().split('T')[0])}
                 >
-                  {trip.is_active ? "Book Now" : "Currently Unavailable"}
+                  {!trip.is_active
+                    ? "Currently Unavailable"
+                    : new Date(trip.start_date) < new Date(new Date().toISOString().split('T')[0])
+                      ? "Booking Closed (Past Trip)"
+                      : "Book Now"
+                  }
                 </Button>
               </CardContent>
             </Card>
           </div>
         </div>
-      </main>
-    </div>
+      </main >
+    </div >
   );
 };
 

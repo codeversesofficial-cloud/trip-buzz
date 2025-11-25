@@ -260,12 +260,6 @@ const AdminDashboard = () => {
             >
               Manage Users
             </button>
-            <button
-              onClick={() => navigate("/admin/vendors")}
-              className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-            >
-              Manage Vendors
-            </button>
           </div>
         </div>
 

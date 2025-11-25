@@ -281,12 +281,6 @@ const Dashboard = () => {
                     Manage Bookings
                   </Button>
                 </Link>
-                <Link to="/admin/vendors">
-                  <Button variant="outline" className="w-full justify-start">
-                    <Store className="mr-2 h-4 w-4" />
-                    Manage Vendors
-                  </Button>
-                </Link>
               </CardContent>
             </Card>
 

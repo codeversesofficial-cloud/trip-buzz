@@ -9,7 +9,10 @@ import {
     LogOut,
     Menu,
     X,
-    List
+    List,
+    ChevronDown,
+    ChevronRight,
+    User
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { auth, db } from "@/integrations/firebase/client";
@@ -30,6 +33,7 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
     const [userId, setUserId] = useState<string | null>(null);
     const [unreadBookings, setUnreadBookings] = useState(false);
     const [unreadVendors, setUnreadVendors] = useState(false);
+    const [isCmsOpen, setIsCmsOpen] = useState(false);
 
     useEffect(() => {
         const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
@@ -99,6 +103,13 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
         markAsRead();
     }, [location.pathname, userId]);
 
+    // Auto-open CMS if on Pages or Company pages
+    useEffect(() => {
+        if (location.pathname === "/admin/footer-pages" || location.pathname === "/admin/company") {
+            setIsCmsOpen(true);
+        }
+    }, [location.pathname]);
+
     const handleLogout = async () => {
         try {
             await signOut(auth);
@@ -121,9 +132,17 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
         { icon: Mountain, label: "Trips", path: "/admin/trips" },
         { icon: ShoppingBag, label: "Bookings", path: "/admin/bookings", hasNotification: unreadBookings },
         { icon: Users, label: "Users", path: "/admin/users" },
-        { icon: Store, label: "Vendors", path: "/admin/vendors", hasNotification: unreadVendors },
         { icon: List, label: "Catalog", path: "/admin/categories" },
     ];
+
+    const cmsSubItems = [
+        { label: "Pages", path: "/admin/footer-pages" },
+        { label: "Company", path: "/admin/company" },
+    ];
+
+    const handleVisitWebsite = () => {
+        window.open("/", "_blank");
+    };
 
     return (
         <div className="min-h-screen bg-background">
@@ -165,9 +184,63 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
                                     </Link>
                                 );
                             })}
+
+                            {/* CMS Dropdown */}
+                            <div>
+                                <Button
+                                    variant="ghost"
+                                    className="w-full justify-start"
+                                    onClick={() => setIsCmsOpen(!isCmsOpen)}
+                                >
+                                    <List className="mr-2 h-4 w-4" />
+                                    CMS
+                                    {isCmsOpen ? (
+                                        <ChevronDown className="ml-auto h-4 w-4" />
+                                    ) : (
+                                        <ChevronRight className="ml-auto h-4 w-4" />
+                                    )}
+                                </Button>
+                                {isCmsOpen && (
+                                    <div className="ml-6 mt-1 space-y-1">
+                                        {cmsSubItems.map((subItem) => {
+                                            const isActive = location.pathname === subItem.path;
+                                            return (
+                                                <Link key={subItem.path} to={subItem.path}>
+                                                    <Button
+                                                        variant={isActive ? "secondary" : "ghost"}
+                                                        className="w-full justify-start text-sm"
+                                                        size="sm"
+                                                    >
+                                                        {subItem.label}
+                                                    </Button>
+                                                </Link>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Profile Link */}
+                            <Link to="/admin/profile">
+                                <Button
+                                    variant={location.pathname === "/admin/profile" ? "secondary" : "ghost"}
+                                    className="w-full justify-start"
+                                >
+                                    <User className="mr-2 h-4 w-4" />
+                                    Profile
+                                </Button>
+                            </Link>
                         </nav>
 
-                        <div className="p-4 border-t">
+                        <div className="p-4 border-t space-y-2">
+                            <Button
+                                variant="outline"
+                                className="w-full justify-start"
+                                onClick={handleVisitWebsite}
+                            >
+                                <Store className="mr-2 h-4 w-4" />
+                                Visit Website
+                            </Button>
                             <Button
                                 variant="ghost"
                                 className="w-full justify-start text-red-500 hover:text-red-600 hover:bg-red-50"

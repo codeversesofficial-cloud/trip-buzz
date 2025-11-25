@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { auth, db } from "@/integrations/firebase/client";
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc, collection, query, where, getDocs, orderBy, addDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, collection, query, where, getDocs, orderBy, addDoc, updateDoc, onSnapshot } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
@@ -19,55 +19,114 @@ const Booking = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  const [trip, setTrip] = useState<any>(null);
+  const [schedules, setSchedules] = useState<any[]>([]);
   const [numberOfPeople, setNumberOfPeople] = useState<number | "">(1);
   const [selectedScheduleId, setSelectedScheduleId] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("cod");
   const [userId, setUserId] = useState<string | null>(null);
+  const [travelers, setTravelers] = useState<{ name: string; age: string; gender: string; phone: string; aadhaar: string }[]>([]);
+  const [realTimeSeats, setRealTimeSeats] = useState<Record<string, number>>({});
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        navigate("/auth");
-      } else {
+      if (user) {
         setUserId(user.uid);
+      } else {
+        setUserId(null);
+        // Redirect to login if not authenticated
+        navigate("/auth");
       }
     });
     return () => unsubscribe();
   }, [navigate]);
 
-  const { data: trip } = useQuery({
-    queryKey: ["trip", tripId],
-    queryFn: async () => {
-      if (!tripId) return null;
-      const docRef = doc(db, "trips", tripId);
-      const docSnap = await getDoc(docRef);
+  useEffect(() => {
+    const fetchTrip = async () => {
+      if (!tripId) return;
+      try {
+        const docRef = doc(db, "trips", tripId);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setTrip({ id: docSnap.id, ...docSnap.data() });
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Trip not found",
+          });
+          navigate("/");
+        }
+      } catch (error) {
+        console.error("Error fetching trip:", error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to load trip details",
+        });
+      }
+    };
+    fetchTrip();
+  }, [tripId, navigate, toast]);
 
-      if (!docSnap.exists()) throw new Error("Trip not found");
-      return { id: docSnap.id, ...docSnap.data() } as any;
-    },
-  });
+  useEffect(() => {
+    if (numberOfPeople === "" || numberOfPeople < 1) {
+      setTravelers([]);
+      return;
+    }
+    setTravelers(prev => {
+      const newTravelers = [...prev];
+      if (newTravelers.length < numberOfPeople) {
+        for (let i = newTravelers.length; i < numberOfPeople; i++) {
+          newTravelers.push({ name: "", age: "", gender: "male", phone: "", aadhaar: "" });
+        }
+      } else if (newTravelers.length > numberOfPeople) {
+        newTravelers.length = numberOfPeople;
+      }
+      return newTravelers;
+    });
+  }, [numberOfPeople]);
 
-  const { data: schedules } = useQuery({
-    queryKey: ["trip-schedules", tripId],
-    queryFn: async () => {
-      if (!tripId) return [];
-      const schedulesRef = collection(db, "trip_schedules");
-      const q = query(
-        schedulesRef,
-        where("trip_id", "==", tripId),
-        where("is_active", "==", true),
-        where("start_date", ">=", new Date().toISOString().split("T")[0])
-      );
+  useEffect(() => {
+    if (!tripId) return;
 
-      const querySnapshot = await getDocs(q);
-      let schedulesData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any[];
+    const schedulesRef = collection(db, "trip_schedules");
+    const q = query(
+      schedulesRef,
+      where("trip_id", "==", tripId),
+      where("is_active", "==", true)
+    );
 
-      // Sort manually since we can't easily do multiple orderBys with inequality filter without index
-      schedulesData.sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime());
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const seats: Record<string, number> = {};
+      const today = new Date().toISOString().split("T")[0];
+      const schedulesList: any[] = [];
 
-      return schedulesData;
-    },
-  });
+      snapshot.docs.forEach(doc => {
+        const data = doc.data();
+        if (data.start_date >= today) {
+          seats[doc.id] = data.available_seats;
+          schedulesList.push({ id: doc.id, ...data });
+        }
+      });
+
+      setRealTimeSeats(seats);
+      setSchedules(schedulesList);
+
+      // Auto-select the first schedule if there's only one and none is selected
+      if (schedulesList.length === 1 && !selectedScheduleId) {
+        setSelectedScheduleId(schedulesList[0].id);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [tripId]);
+
+  const handleTravelerChange = (index: number, field: string, value: string) => {
+    const newTravelers = [...travelers];
+    (newTravelers[index] as any)[field] = value;
+    setTravelers(newTravelers);
+  };
 
   const bookingMutation = useMutation({
     mutationFn: async () => {
@@ -75,30 +134,43 @@ const Booking = () => {
         throw new Error("Missing required information");
       }
 
+      // Validate traveler details
+      travelers.forEach((traveler, index) => {
+        if (!traveler.name || !traveler.age || !traveler.gender) {
+          throw new Error(`Please fill in all details for Traveler ${index + 1}`);
+        }
+        // Mandatory fields for Traveler 1 (Index 0)
+        if (index === 0) {
+          if (!traveler.phone) throw new Error("Phone number is mandatory for Traveler 1");
+          if (!traveler.aadhaar) throw new Error("Aadhaar number is mandatory for Traveler 1");
+        }
+      });
+
       const peopleCount = numberOfPeople === "" ? 1 : numberOfPeople;
       const totalAmount = trip.price_per_person * peopleCount;
 
       const bookingData = {
         user_id: userId,
         trip_id: tripId,
-        schedule_id: selectedScheduleId || "default", // Use "default" if no schedule selected (fallback)
+        schedule_id: selectedScheduleId || "default",
         number_of_people: peopleCount,
         total_amount: totalAmount,
         payment_method: paymentMethod,
         payment_status: paymentMethod === "cod" ? "pending" : "confirmed",
         booking_status: "pending",
+        travelers: travelers,
         created_at: new Date().toISOString()
       };
 
       const docRef = await addDoc(collection(db, "bookings"), bookingData);
 
-      // Update available seats ONLY if a real schedule was selected
       if (selectedScheduleId && selectedScheduleId !== "default") {
-        const schedule = schedules?.find((s) => s.id === selectedScheduleId);
-        if (schedule) {
-          const scheduleRef = doc(db, "trip_schedules", selectedScheduleId);
-          await updateDoc(scheduleRef, { available_seats: schedule.available_seats - peopleCount });
+        const currentSeats = realTimeSeats[selectedScheduleId];
+        if (currentSeats < peopleCount) {
+          throw new Error("Not enough seats available!");
         }
+        const scheduleRef = doc(db, "trip_schedules", selectedScheduleId);
+        await updateDoc(scheduleRef, { available_seats: currentSeats - peopleCount });
       }
 
       // Create notifications for admins
@@ -106,28 +178,26 @@ const Booking = () => {
       const adminIds = new Set<string>();
 
       try {
-        // Query for users with role 'admin'
         const roleQuery = query(usersRef, where("role", "==", "admin"));
         const roleSnapshot = await getDocs(roleQuery);
         roleSnapshot.docs.forEach(doc => adminIds.add(doc.id));
 
-        // Query for users with 'admin' in roles array
         const rolesArrayQuery = query(usersRef, where("roles", "array-contains", "admin"));
         const rolesArraySnapshot = await getDocs(rolesArrayQuery);
         rolesArraySnapshot.docs.forEach(doc => adminIds.add(doc.id));
 
-        // Query for the specific admin email
-        const emailQuery = query(usersRef, where("email", "==", "sahildhiman034@gmail.com"));
-        const emailSnapshot = await getDocs(emailQuery);
-        emailSnapshot.docs.forEach(doc => adminIds.add(doc.id));
+        // Fetch admin email from organization settings
+        const orgSettingsRef = doc(db, "organization_settings", "profile");
+        const orgSettingsSnap = await getDoc(orgSettingsRef);
+        const adminEmail = orgSettingsSnap.exists() ? orgSettingsSnap.data().email : "sahildhiman034@gmail.com";
 
-        console.log("Found admins for notification:", Array.from(adminIds));
+        if (adminEmail) {
+          const emailQuery = query(usersRef, where("email", "==", adminEmail));
+          const emailSnapshot = await getDocs(emailQuery);
+          emailSnapshot.docs.forEach(doc => adminIds.add(doc.id));
+        }
       } catch (error) {
         console.error("Error finding admins:", error);
-      }
-
-      if (adminIds.size === 0) {
-        console.warn("No admins found to notify!");
       }
 
       const notificationsBatch = Array.from(adminIds).map(adminId => {
@@ -135,14 +205,13 @@ const Booking = () => {
           user_id: adminId,
           title: "New Booking Request",
           message: `New booking for ${trip.title} by ${peopleCount} people. Amount: ₹${totalAmount}`,
-          type: "booking", // Changed to match AdminLayout listener
+          type: "booking",
           is_read: false,
           link: "/admin/bookings",
           created_at: new Date().toISOString()
         });
       });
 
-      // Add to global activity log
       notificationsBatch.push(
         addDoc(collection(db, "activities"), {
           type: "booking",
@@ -154,8 +223,6 @@ const Booking = () => {
       );
 
       await Promise.all(notificationsBatch);
-      console.log("Notifications sent to admins");
-
       return docRef.id;
     },
     onSuccess: () => {
@@ -175,7 +242,6 @@ const Booking = () => {
   });
 
   const handleBooking = () => {
-    // If schedules exist, require selection. If not, we use default.
     if (schedules && schedules.length > 0 && !selectedScheduleId) {
       toast({
         variant: "destructive",
@@ -235,7 +301,7 @@ const Booking = () => {
                         {schedules.map((schedule) => (
                           <SelectItem key={schedule.id} value={schedule.id}>
                             {format(new Date(schedule.start_date), "MMM dd")} -{" "}
-                            {format(new Date(schedule.end_date), "MMM dd, yyyy")} ({schedule.available_seats} seats left)
+                            {format(new Date(schedule.end_date), "MMM dd, yyyy")} ({realTimeSeats[schedule.id] ?? schedule.available_seats} seats left)
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -264,6 +330,74 @@ const Booking = () => {
                       if (numberOfPeople === "" || numberOfPeople < 1) setNumberOfPeople(1);
                     }}
                   />
+                </div>
+
+                {/* Traveler Details Form */}
+                <div className="space-y-4 mt-4">
+                  <h3 className="font-semibold">Traveler Details</h3>
+                  {travelers.map((traveler, index) => (
+                    <div key={index} className="p-4 border rounded-md space-y-4">
+                      <div className="font-medium text-sm text-muted-foreground">Traveler {index + 1} {index === 0 && "(Primary Contact)"}</div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <Label htmlFor={`name-${index}`}>Name <span className="text-red-500">*</span></Label>
+                          <Input
+                            id={`name-${index}`}
+                            value={traveler.name}
+                            onChange={(e) => handleTravelerChange(index, "name", e.target.value)}
+                            placeholder="Full Name"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor={`age-${index}`}>Age <span className="text-red-500">*</span></Label>
+                          <Input
+                            id={`age-${index}`}
+                            type="number"
+                            value={traveler.age}
+                            onChange={(e) => handleTravelerChange(index, "age", e.target.value)}
+                            placeholder="Age"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor={`gender-${index}`}>Gender <span className="text-red-500">*</span></Label>
+                          <Select
+                            value={traveler.gender}
+                            onValueChange={(value) => handleTravelerChange(index, "gender", value)}
+                          >
+                            <SelectTrigger id={`gender-${index}`}>
+                              <SelectValue placeholder="Gender" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="male">Male</SelectItem>
+                              <SelectItem value="female">Female</SelectItem>
+                              <SelectItem value="other">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor={`phone-${index}`}>Phone Number {index === 0 && <span className="text-red-500">*</span>}</Label>
+                          <Input
+                            id={`phone-${index}`}
+                            type="tel"
+                            value={traveler.phone}
+                            onChange={(e) => handleTravelerChange(index, "phone", e.target.value)}
+                            placeholder="Phone Number"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor={`aadhaar-${index}`}>Aadhaar Number {index === 0 && <span className="text-red-500">*</span>}</Label>
+                          <Input
+                            id={`aadhaar-${index}`}
+                            value={traveler.aadhaar}
+                            onChange={(e) => handleTravelerChange(index, "aadhaar", e.target.value)}
+                            placeholder="Aadhaar Number"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
 
                 <div>

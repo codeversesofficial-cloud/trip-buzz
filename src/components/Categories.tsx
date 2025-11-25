@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { db } from "@/integrations/firebase/client";
 import { collection, query, orderBy, getDocs, where } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
+import { useRef } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export const Categories = () => {
   const navigate = useNavigate();
@@ -28,29 +30,90 @@ export const Categories = () => {
     navigate(`/trips?category=${categoryId}`);
   };
 
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  const scroll = (direction: 'left' | 'right') => {
+    if (scrollContainerRef.current) {
+      const containerWidth = scrollContainerRef.current.offsetWidth;
+      const scrollAmount = containerWidth; // Scroll by full container width
+      const newScrollLeft = direction === 'left'
+        ? scrollContainerRef.current.scrollLeft - scrollAmount
+        : scrollContainerRef.current.scrollLeft + scrollAmount;
+
+      scrollContainerRef.current.scrollTo({
+        left: newScrollLeft,
+        behavior: 'smooth'
+      });
+    }
+  };
+
   return (
     <div className="py-12">
       <h2 className="mb-8 text-3xl font-bold">Select Trip Category</h2>
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
-        {categories?.map((category) => (
-          <Card
-            key={category.id}
-            className="cursor-pointer p-6 text-center transition-all hover:shadow-lg hover:scale-105"
-            onClick={() => handleCategoryClick(category.id)}
-          >
-            <div className="mb-3 flex justify-center">
-              <img
-                src={category.icon}
-                alt={category.name}
-                className="h-16 w-16 object-cover rounded-full"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = "https://placehold.co/100x100?text=No+Image";
-                }}
-              />
+
+      <div className="relative flex items-center">
+        {/* Left Navigation Button - Responsive sizing */}
+        <button
+          onClick={() => scroll('left')}
+          className="p-2 md:p-3 rounded-full bg-white shadow-lg hover:bg-gray-50 border border-gray-100 transition-all mr-2 md:mr-4 flex-shrink-0 z-10"
+          aria-label="Scroll left"
+        >
+          <ChevronLeft className="h-4 w-4 md:h-6 md:w-6 text-gray-600" />
+        </button>
+
+        {/* Carousel Container - Responsive card display */}
+        <div
+          ref={scrollContainerRef}
+          className="flex overflow-x-auto gap-3 md:gap-4 flex-1 scrollbar-hide"
+          style={{
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none',
+            scrollSnapType: 'x mandatory'
+          }}
+        >
+          <style>
+            {`
+              .scrollbar-hide::-webkit-scrollbar {
+                display: none;
+              }
+            `}
+          </style>
+          {categories?.map((category) => (
+            <div
+              key={category.id}
+              className="flex-shrink-0 w-full md:w-[calc(50%-6px)] lg:w-[calc(25%-12px)]"
+              style={{
+                scrollSnapAlign: 'start'
+              }}
+            >
+              <Card
+                className="cursor-pointer p-4 md:p-6 text-center transition-all hover:shadow-lg hover:scale-105 h-full"
+                onClick={() => handleCategoryClick(category.id)}
+              >
+                <div className="mb-3 flex justify-center">
+                  <img
+                    src={category.icon}
+                    alt={category.name}
+                    className="h-12 w-12 md:h-16 md:w-16 object-cover rounded-full"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = "https://placehold.co/100x100?text=No+Image";
+                    }}
+                  />
+                </div>
+                <h3 className="font-semibold text-sm md:text-base break-words">{category.name}</h3>
+              </Card>
             </div>
-            <h3 className="font-semibold">{category.name}</h3>
-          </Card>
-        ))}
+          ))}
+        </div>
+
+        {/* Right Navigation Button - Responsive sizing */}
+        <button
+          onClick={() => scroll('right')}
+          className="p-2 md:p-3 rounded-full bg-white shadow-lg hover:bg-gray-50 border border-gray-100 transition-all ml-2 md:ml-4 flex-shrink-0 z-10"
+          aria-label="Scroll right"
+        >
+          <ChevronRight className="h-4 w-4 md:h-6 md:w-6 text-gray-600" />
+        </button>
       </div>
     </div>
   );

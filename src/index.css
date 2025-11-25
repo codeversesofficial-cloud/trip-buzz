@@ -2,6 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Global overflow prevention for mobile */
+html,
+body {
+  overflow-x: hidden !important;
+  max-width: 100vw !important;
+}
+
+/* Ensure all containers respect viewport width */
+* {
+  max-width: 100%;
+}
+
+/* Allow specific elements to use full width */
+html,
+body,
+#root {
+  max-width: 100vw !important;
+}
+
+
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
 All colors MUST be HSL.
 */
@@ -20,7 +40,7 @@ All colors MUST be HSL.
     /* Yellow primary theme */
     --primary: 45 100% 51%;
     --primary-foreground: 222 47% 11%;
-    
+
     --secondary: 45 100% 96%;
     --secondary-foreground: 222 47% 11%;
 
@@ -102,5 +122,17 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+  }
+
+  /* Reset mark background to avoid unwanted highlighting */
+  mark {
+    background-color: transparent;
+    color: inherit;
+  }
+
+  /* Custom selection color */
+  ::selection {
+    background-color: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
   }
 }

@@ -530,21 +530,6 @@ const UsersManagement = () => {
 
             <div className="flex items-center space-x-2">
               <Checkbox
-                id="role-vendor"
-                checked={selectedRoles.includes("vendor")}
-                onCheckedChange={() => toggleRole("vendor")}
-              />
-              <label
-                htmlFor="role-vendor"
-                className="flex cursor-pointer items-center text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
-                <Store className="mr-2 h-4 w-4" />
-                Vendor (Can create trips)
-              </label>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Checkbox
                 id="role-admin"
                 checked={selectedRoles.includes("admin")}
                 onCheckedChange={() => toggleRole("admin")}

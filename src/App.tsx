@@ -17,11 +17,13 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import TripsManagement from "./pages/admin/TripsManagement";
 import BookingsManagement from "./pages/admin/BookingsManagement";
 import UsersManagement from "./pages/admin/UsersManagement";
-import VendorsManagement from "./pages/admin/VendorsManagement";
 import CategoryManagement from "./pages/admin/CategoryManagement";
-import VendorRegistration from "./pages/VendorRegistration";
-import VendorDashboard from "./pages/vendor/VendorDashboard";
+import FooterPagesManagement from "./pages/admin/FooterPagesManagement";
+import CompanyManagement from "./pages/admin/CompanyManagement";
+import FooterPage from "./pages/FooterPage";
+import CompanyPage from "./pages/CompanyPage";
 import NotFound from "./pages/NotFound";
+import ProfileManagement from "./pages/admin/ProfileManagement";
 
 const queryClient = new QueryClient();
 
@@ -46,10 +48,12 @@ const App = () => (
           <Route path="/admin/trips" element={<TripsManagement />} />
           <Route path="/admin/bookings" element={<BookingsManagement />} />
           <Route path="/admin/users" element={<UsersManagement />} />
-          <Route path="/admin/vendors" element={<VendorsManagement />} />
           <Route path="/admin/categories" element={<CategoryManagement />} />
-          <Route path="/vendor/register" element={<VendorRegistration />} />
-          <Route path="/vendor/dashboard" element={<VendorDashboard />} />
+          <Route path="/admin/footer-pages" element={<FooterPagesManagement />} />
+          <Route path="/admin/company" element={<CompanyManagement />} />
+          <Route path="/admin/profile" element={<ProfileManagement />} />
+          <Route path="/page/:slug" element={<FooterPage />} />
+          <Route path="/company/:slug" element={<CompanyPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

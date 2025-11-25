@@ -22,15 +22,13 @@ const Trips = () => {
     queryKey: ["trips", selectedCategory, searchLocation, startDateParam, endDateParam],
     queryFn: async () => {
       const tripsRef = collection(db, "trips");
+      const schedulesRef = collection(db, "trip_schedules");
+
       let q = query(tripsRef, where("is_active", "==", true));
 
       if (selectedCategory !== "all") {
         q = query(q, where("category_id", "==", selectedCategory));
       }
-
-      // Firestore doesn't support ilike, so we'll filter in memory for location if needed
-      // or use a third-party search service like Algolia for better search.
-      // For now, we fetch and filter in JS for location if it's provided.
 
       const querySnapshot = await getDocs(q);
       let tripsData = querySnapshot.docs.map(doc => ({
@@ -38,6 +36,10 @@ const Trips = () => {
         ...doc.data(),
         categories: doc.data().categories || { name: 'Unknown' }
       })) as any[];
+
+      const today = new Date().toISOString().split('T')[0];
+      // Only show future trips in Explore Trips and category pages
+      tripsData = tripsData.filter((trip: any) => trip.start_date >= today);
 
       if (searchLocation) {
         tripsData = tripsData.filter(trip =>
@@ -53,7 +55,30 @@ const Trips = () => {
         tripsData = tripsData.filter(trip => new Date(trip.start_date) <= new Date(endDateParam));
       }
 
-      // Client-side sorting since we can't easily mix where and orderBy on different fields without composite indexes
+      // Fetch schedules for trips
+      const scheduleQuery = query(
+        schedulesRef,
+        where("is_active", "==", true)
+      );
+      const schedulesSnapshot = await getDocs(scheduleQuery);
+
+      const schedulesByTrip: Record<string, any> = {};
+      schedulesSnapshot.docs.forEach(doc => {
+        const scheduleData = doc.data();
+        if (scheduleData.start_date >= today) {
+          if (!schedulesByTrip[scheduleData.trip_id] || scheduleData.start_date < schedulesByTrip[scheduleData.trip_id].start_date) {
+            schedulesByTrip[scheduleData.trip_id] = { id: doc.id, ...scheduleData };
+          }
+        }
+      });
+
+      // Add available_seats to trips
+      tripsData = tripsData.map(trip => ({
+        ...trip,
+        available_seats: schedulesByTrip[trip.id]?.available_seats
+      }));
+
+      // Client-side sorting
       tripsData.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
       return tripsData;
@@ -110,6 +135,7 @@ const Trips = () => {
                 duration_days={trip.duration_days}
                 duration_nights={trip.duration_nights}
                 max_seats={trip.max_seats}
+                available_seats={trip.available_seats}
                 images={trip.image_url ? [trip.image_url] : (trip.images || [])}
                 category={trip.categories}
               />

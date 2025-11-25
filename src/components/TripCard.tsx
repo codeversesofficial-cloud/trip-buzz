@@ -12,6 +12,7 @@ interface TripCardProps {
   duration_days: number;
   duration_nights: number;
   max_seats: number;
+  available_seats?: number;
   images: string[];
   category?: { name: string };
 }
@@ -24,6 +25,7 @@ export const TripCard = ({
   duration_days,
   duration_nights,
   max_seats,
+  available_seats,
   images,
   category,
 }: TripCardProps) => {
@@ -35,7 +37,7 @@ export const TripCard = ({
           alt={title}
           className="h-full w-full object-cover transition-transform group-hover:scale-110"
         />
-        {category && (
+        {category && category.name !== 'Unknown' && (
           <Badge className="absolute right-2 top-2 bg-primary">
             {category.name}
           </Badge>
@@ -54,7 +56,11 @@ export const TripCard = ({
           </div>
           <div className="flex items-center">
             <Users className="mr-2 h-4 w-4" />
-            Up to {max_seats} Guests
+            {available_seats !== undefined ? (
+              <span className="text-green-600 font-medium">{available_seats} Seats Left</span>
+            ) : (
+              <span>Up to {max_seats} Guests</span>
+            )}
           </div>
         </div>
       </CardContent>

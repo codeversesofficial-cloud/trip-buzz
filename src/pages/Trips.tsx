@@ -114,7 +114,7 @@ const Trips = () => {
               <SelectItem value="all">All Categories</SelectItem>
               {categories?.map((cat) => (
                 <SelectItem key={cat.id} value={cat.id}>
-                  {cat.icon} {cat.name}
+                  {cat.name}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -132,6 +132,7 @@ const Trips = () => {
                 title={trip.title}
                 location={trip.location}
                 price={trip.price_per_person}
+                compare_price={trip.compare_price}
                 duration_days={trip.duration_days}
                 duration_nights={trip.duration_nights}
                 max_seats={trip.max_seats}

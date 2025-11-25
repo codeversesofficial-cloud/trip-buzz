@@ -36,7 +36,7 @@ const Profile = () => {
     queryKey: ["profile", userId],
     enabled: !!userId,
     queryFn: async () => {
-      const docRef = doc(db, "profiles", userId!);
+      const docRef = doc(db, "users", userId!);
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
@@ -51,7 +51,7 @@ const Profile = () => {
 
   const updateProfile = useMutation({
     mutationFn: async (updates: any) => {
-      const docRef = doc(db, "profiles", userId!);
+      const docRef = doc(db, "users", userId!);
       await setDoc(docRef, updates, { merge: true });
     },
     onSuccess: () => {

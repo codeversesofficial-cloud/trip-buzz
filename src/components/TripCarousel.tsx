@@ -94,9 +94,20 @@ export const TripCarousel = ({ trips, title, viewAllLink }: TripCarouselProps) =
         if (!container) return;
 
         const handleWheel = (e: WheelEvent) => {
-            e.preventDefault();
-            container.scrollLeft += e.deltaY;
-            pauseAutoScroll();
+            // Only handle horizontal scrolling when Shift key is pressed
+            // This allows normal vertical page scrolling
+            if (e.shiftKey && Math.abs(e.deltaY) > 0) {
+                e.preventDefault();
+                container.scrollLeft += e.deltaY;
+                pauseAutoScroll();
+            }
+            // Also handle native horizontal scroll (trackpad swipe)
+            else if (Math.abs(e.deltaX) > 0) {
+                e.preventDefault();
+                container.scrollLeft += e.deltaX;
+                pauseAutoScroll();
+            }
+            // Allow normal vertical scrolling (don't preventDefault)
         };
 
         container.addEventListener('wheel', handleWheel, { passive: false });

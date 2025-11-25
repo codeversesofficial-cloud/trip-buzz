@@ -63,6 +63,7 @@ const TripsManagement = () => {
     title: "",
     location: "",
     price_per_person: "",
+    compare_price: "",
     duration_days: "",
     duration_nights: "",
     max_seats: "",
@@ -384,14 +385,31 @@ const TripsManagement = () => {
                       </SelectContent>
                     </Select>
                   </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
-                    <Label htmlFor="price">Price per Person (₹) <span className="text-red-500">*</span></Label>
+                    <Label htmlFor="price">Our Price (₹) <span className="text-red-500">*</span></Label>
                     <Input
                       id="price"
                       type="number"
                       value={newTrip.price_per_person}
                       onChange={(e) => setNewTrip({ ...newTrip, price_per_person: e.target.value })}
                     />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="compare_price">Compare Price / MRP (₹)</Label>
+                    <Input
+                      id="compare_price"
+                      type="number"
+                      placeholder="Optional"
+                      value={newTrip.compare_price}
+                      onChange={(e) => setNewTrip({ ...newTrip, compare_price: e.target.value })}
+                    />
+                    {newTrip.compare_price && Number(newTrip.compare_price) > Number(newTrip.price_per_person) && (
+                      <p className="text-xs text-green-600">
+                        {Math.round(((Number(newTrip.compare_price) - Number(newTrip.price_per_person)) / Number(newTrip.compare_price)) * 100)}% OFF
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div className="grid gap-2">

@@ -9,6 +9,7 @@ interface TripCardProps {
   title: string;
   location: string;
   price: number;
+  compare_price?: number;
   duration_days: number;
   duration_nights: number;
   max_seats: number;
@@ -22,6 +23,7 @@ export const TripCard = ({
   title,
   location,
   price,
+  compare_price,
   duration_days,
   duration_nights,
   max_seats,
@@ -66,6 +68,14 @@ export const TripCard = ({
       </CardContent>
       <CardFooter className="flex items-center justify-between p-4 pt-0">
         <div>
+          {compare_price && compare_price > price && (
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-sm line-through text-muted-foreground">₹{compare_price.toLocaleString()}</span>
+              <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded">
+                {Math.round(((compare_price - price) / compare_price) * 100)}% OFF
+              </span>
+            </div>
+          )}
           <div className="text-2xl font-bold text-primary">₹{price.toLocaleString()}</div>
           <div className="text-xs text-muted-foreground">Per person</div>
         </div>

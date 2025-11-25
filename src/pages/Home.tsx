@@ -81,7 +81,7 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-background w-full overflow-x-hidden">
       <Navbar />
-      <main className="container mx-auto px-4 py-8 max-w-full">
+      <main className="container mx-auto px-4 md:px-6 lg:px-8 py-6 max-w-[1400px]">
         <Hero />
         <div className="my-8">
           <SearchBar />

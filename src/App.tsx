@@ -24,6 +24,8 @@ import FooterPage from "./pages/FooterPage";
 import CompanyPage from "./pages/CompanyPage";
 import NotFound from "./pages/NotFound";
 import ProfileManagement from "./pages/admin/ProfileManagement";
+import BannerManagement from "./pages/admin/BannerManagement";
+import ReviewsManagement from "./pages/admin/ReviewsManagement";
 
 const queryClient = new QueryClient();
 
@@ -52,6 +54,8 @@ const App = () => (
           <Route path="/admin/footer-pages" element={<FooterPagesManagement />} />
           <Route path="/admin/company" element={<CompanyManagement />} />
           <Route path="/admin/profile" element={<ProfileManagement />} />
+          <Route path="/admin/banner-management" element={<BannerManagement />} />
+          <Route path="/admin/reviews" element={<ReviewsManagement />} />
           <Route path="/page/:slug" element={<FooterPage />} />
           <Route path="/company/:slug" element={<CompanyPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

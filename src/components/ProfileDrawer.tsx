@@ -42,7 +42,7 @@ export const ProfileDrawer = ({ open, onOpenChange }: ProfileDrawerProps) => {
 
       if (!user) return null;
 
-      const docRef = doc(db, "profiles", user.uid);
+      const docRef = doc(db, "users", user.uid);
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
@@ -71,24 +71,7 @@ export const ProfileDrawer = ({ open, onOpenChange }: ProfileDrawerProps) => {
     },
   });
 
-  const { data: isVendor } = useQuery({
-    queryKey: ["is-vendor", session?.user?.uid, session?.user?.email],
-    enabled: !!session?.user?.uid,
-    queryFn: async () => {
-      if (!session?.user?.uid) return false;
 
-      // Hardcoded check for vendor
-      if (session?.user?.email === "vendor@gmail.com") return true;
-
-      const q = query(
-        collection(db, "user_roles"),
-        where("user_id", "==", session.user.uid),
-        where("role", "==", "vendor")
-      );
-      const querySnapshot = await getDocs(q);
-      return !querySnapshot.empty;
-    },
-  });
 
   const handleSignOut = async () => {
     await auth.signOut();
@@ -179,45 +162,7 @@ export const ProfileDrawer = ({ open, onOpenChange }: ProfileDrawerProps) => {
             </>
           )}
 
-          {/* Vendor Dashboard */}
-          {isVendor && !isAdmin && (
-            <>
-              <button
-                onClick={() => {
-                  navigate("/vendor/dashboard");
-                  onOpenChange(false);
-                }}
-                className="flex w-full items-center justify-between rounded-lg bg-accent/50 p-4 transition-colors hover:bg-accent"
-              >
-                <div className="flex items-center space-x-3">
-                  <Shield className="h-5 w-5 text-foreground" />
-                  <span className="font-medium">Vendor Dashboard</span>
-                </div>
-                <ChevronRight className="h-5 w-5" />
-              </button>
-              <Separator />
-            </>
-          )}
 
-          {/* Become a Vendor */}
-          {!isVendor && !isAdmin && (
-            <>
-              <button
-                onClick={() => {
-                  navigate("/vendor/register");
-                  onOpenChange(false);
-                }}
-                className="flex w-full items-center justify-between rounded-lg border-2 border-dashed border-muted-foreground/30 p-4 transition-colors hover:border-primary hover:bg-primary/5"
-              >
-                <div className="flex items-center space-x-3">
-                  <Shield className="h-5 w-5 text-muted-foreground" />
-                  <span className="font-medium text-muted-foreground">Become a Vendor</span>
-                </div>
-                <ChevronRight className="h-5 w-5 text-muted-foreground" />
-              </button>
-              <Separator />
-            </>
-          )}
 
           {/* Menu Items */}
           <nav className="space-y-2">

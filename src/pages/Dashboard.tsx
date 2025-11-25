@@ -10,11 +10,14 @@ import { auth, db } from "@/integrations/firebase/client";
 import { onAuthStateChanged } from "firebase/auth";
 import { collection, query, where, getDocs, orderBy, doc, getDoc, getCountFromServer } from "firebase/firestore";
 import { format } from "date-fns";
-import { Calendar, MapPin, Users, ShieldCheck, Store, User as UserIcon, TrendingUp, DollarSign } from "lucide-react";
+import { Calendar, MapPin, Users, ShieldCheck, Store, User as UserIcon, TrendingUp, DollarSign, Star } from "lucide-react";
+import { ReviewDialog } from "@/components/ReviewDialog";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [userId, setUserId] = useState<string | null>(null);
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
+  const [selectedTrip, setSelectedTrip] = useState<{ id: string; name: string } | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
 
   useEffect(() => {
@@ -507,6 +510,16 @@ const Dashboard = () => {
                       <div className="pt-2 text-2xl font-bold text-muted-foreground">
                         ₹{booking.total_amount}
                       </div>
+                      <Button
+                        className="w-full mt-4"
+                        onClick={() => {
+                          setSelectedTrip({ id: booking.trip_id, name: booking.trips.title });
+                          setReviewDialogOpen(true);
+                        }}
+                      >
+                        <Star className="mr-2 h-4 w-4" />
+                        Write Review
+                      </Button>
                     </CardContent>
                   </Card>
                 ))}
@@ -552,6 +565,16 @@ const Dashboard = () => {
           </TabsContent>
         </Tabs>
       </main>
+
+      {/* Review Dialog */}
+      {selectedTrip && (
+        <ReviewDialog
+          open={reviewDialogOpen}
+          onOpenChange={setReviewDialogOpen}
+          tripId={selectedTrip.id}
+          tripName={selectedTrip.name}
+        />
+      )}
     </div>
   );
 };

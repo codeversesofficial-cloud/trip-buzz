@@ -116,20 +116,25 @@ const AdminDashboard = () => {
   const { data: stats } = useQuery({
     queryKey: ["admin-stats"],
     queryFn: async () => {
-      const [usersSnap, bookingsSnap, tripsSnap, vendorsSnap] = await Promise.all([
+      const [usersSnap, bookingsSnap, tripsSnap] = await Promise.all([
         getDocs(collection(db, "users")),
         getDocs(collection(db, "bookings")),
         getDocs(collection(db, "trips")),
-        getDocs(query(collection(db, "users"), where("role", "==", "vendor"))),
       ]);
 
       const totalRevenue = bookingsSnap.docs.reduce((sum, doc) => sum + Number(doc.data().total_amount || 0), 0);
 
+      // Filter out vendors from user count to match Users Management page
+      const usersCount = usersSnap.docs.filter(doc => {
+        const userData = doc.data();
+        const roles = Array.isArray(userData.role) ? userData.role : [userData.role || "user"];
+        return !roles.includes("vendor");
+      }).length;
+
       return {
-        totalUsers: usersSnap.docs.filter(doc => doc.data().role !== 'vendor').length || 0,
+        totalUsers: usersCount || 0,
         totalBookings: bookingsSnap.size || 0,
         totalRevenue,
-        totalVendors: vendorsSnap.size || 0,
         totalTrips: tripsSnap.size || 0,
       };
     },
@@ -141,19 +146,82 @@ const AdminDashboard = () => {
       const bookingsSnap = await getDocs(collection(db, "bookings"));
       const data = bookingsSnap.docs.map(doc => doc.data());
 
-      // Group by month for demo
-      const monthlyData: Record<string, number> = {};
+      const aggregatedData: Record<string, number> = {};
+      const now = new Date();
+
+      // Initialize data structure with 0s based on timeRange to ensure line graph continuity
+      if (timeRange === "daily") {
+        // Last 7 days
+        for (let i = 6; i >= 0; i--) {
+          const d = new Date();
+          d.setDate(now.getDate() - i);
+          const key = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+          aggregatedData[key] = 0;
+        }
+      } else if (timeRange === "weekly") {
+        // Last 4 weeks
+        for (let i = 3; i >= 0; i--) {
+          const d = new Date();
+          d.setDate(now.getDate() - (i * 7));
+          const startOfYear = new Date(d.getFullYear(), 0, 1);
+          const pastDays = (d.getTime() - startOfYear.getTime()) / 86400000;
+          const weekNum = Math.ceil((pastDays + startOfYear.getDay() + 1) / 7);
+          const key = `Week ${weekNum}`;
+          aggregatedData[key] = 0;
+        }
+      } else if (timeRange === "monthly") {
+        // All 12 months of current year
+        for (let i = 0; i < 12; i++) {
+          const d = new Date(now.getFullYear(), i, 1);
+          const key = d.toLocaleString("default", { month: "short" });
+          aggregatedData[key] = 0;
+        }
+      } else if (timeRange === "yearly") {
+        // Last 5 years
+        for (let i = 4; i >= 0; i--) {
+          const d = new Date();
+          d.setFullYear(now.getFullYear() - i);
+          const key = d.getFullYear().toString();
+          aggregatedData[key] = 0;
+        }
+      }
+
+      // Fill with actual data
       data.forEach((booking) => {
-        if (booking.created_at) {
-          const date = booking.created_at.toDate ? booking.created_at.toDate() : new Date(booking.created_at);
-          const month = date.toLocaleString("default", { month: "short" });
-          monthlyData[month] = (monthlyData[month] || 0) + Number(booking.total_amount || 0);
+        if (!booking.created_at) return;
+
+        const date = booking.created_at.toDate ? booking.created_at.toDate() : new Date(booking.created_at);
+        const amount = Number(booking.total_amount || 0);
+        let key = "";
+
+        if (timeRange === "daily") {
+          // Only include if within last 7 days
+          const diffTime = Math.abs(now.getTime() - date.getTime());
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          if (diffDays <= 7) {
+            key = date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+          }
+        } else if (timeRange === "weekly") {
+          const startOfYear = new Date(date.getFullYear(), 0, 1);
+          const pastDays = (date.getTime() - startOfYear.getTime()) / 86400000;
+          const weekNum = Math.ceil((pastDays + startOfYear.getDay() + 1) / 7);
+          key = `Week ${weekNum}`;
+        } else if (timeRange === "monthly") {
+          if (date.getFullYear() === now.getFullYear()) {
+            key = date.toLocaleString("default", { month: "short" });
+          }
+        } else if (timeRange === "yearly") {
+          key = date.getFullYear().toString();
+        }
+
+        if (key && aggregatedData.hasOwnProperty(key)) {
+          aggregatedData[key] += amount;
         }
       });
 
-      return Object.entries(monthlyData).map(([month, amount]) => ({
-        month,
-        revenue: amount,
+      return Object.entries(aggregatedData).map(([name, revenue]) => ({
+        month: name,
+        revenue,
       }));
     },
   });
@@ -215,13 +283,6 @@ const AdminDashboard = () => {
       value: `₹${(stats?.totalRevenue || 0).toLocaleString()}`,
       icon: DollarSign,
       trend: "+8.48%",
-      isPositive: true,
-    },
-    {
-      title: "Total Vendors",
-      value: stats?.totalVendors || 0,
-      icon: Store,
-      trend: "+100%",
       isPositive: true,
     },
     {

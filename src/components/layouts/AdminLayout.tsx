@@ -12,7 +12,9 @@ import {
     List,
     ChevronDown,
     ChevronRight,
-    User
+    Image,
+    Star,
+    User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { auth, db } from "@/integrations/firebase/client";
@@ -32,8 +34,8 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [userId, setUserId] = useState<string | null>(null);
     const [unreadBookings, setUnreadBookings] = useState(false);
-    const [unreadVendors, setUnreadVendors] = useState(false);
     const [isCmsOpen, setIsCmsOpen] = useState(false);
+    const [isWebDesignOpen, setIsWebDesignOpen] = useState(false);
 
     useEffect(() => {
         const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
@@ -57,16 +59,13 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
             let hasBookings = false;
-            let hasVendors = false;
 
             snapshot.docs.forEach(doc => {
                 const data = doc.data();
                 if (data.type === 'booking') hasBookings = true;
-                if (data.type === 'vendor_application') hasVendors = true;
             });
 
             setUnreadBookings(hasBookings);
-            setUnreadVendors(hasVendors);
         });
 
         return () => unsubscribe();
@@ -78,7 +77,6 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
 
             let type = "";
             if (location.pathname === "/admin/bookings") type = "booking";
-            else if (location.pathname === "/admin/vendors") type = "vendor_application";
 
             if (!type) return;
 
@@ -108,6 +106,9 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
         if (location.pathname === "/admin/footer-pages" || location.pathname === "/admin/company") {
             setIsCmsOpen(true);
         }
+        if (location.pathname === "/admin/banner-management") {
+            setIsWebDesignOpen(true);
+        }
     }, [location.pathname]);
 
     const handleLogout = async () => {
@@ -133,6 +134,7 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
         { icon: ShoppingBag, label: "Bookings", path: "/admin/bookings", hasNotification: unreadBookings },
         { icon: Users, label: "Users", path: "/admin/users" },
         { icon: List, label: "Catalog", path: "/admin/categories" },
+        { icon: Star, label: "Reviews", path: "/admin/reviews" },
     ];
 
     const cmsSubItems = [
@@ -216,6 +218,36 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
                                                 </Link>
                                             );
                                         })}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Web Design Dropdown */}
+                            <div>
+                                <Button
+                                    variant="ghost"
+                                    className="w-full justify-start"
+                                    onClick={() => setIsWebDesignOpen(!isWebDesignOpen)}
+                                >
+                                    <Image className="mr-2 h-4 w-4" />
+                                    Web Design
+                                    {isWebDesignOpen ? (
+                                        <ChevronDown className="ml-auto h-4 w-4" />
+                                    ) : (
+                                        <ChevronRight className="ml-auto h-4 w-4" />
+                                    )}
+                                </Button>
+                                {isWebDesignOpen && (
+                                    <div className="ml-6 mt-1 space-y-1">
+                                        <Link to="/admin/banner-management">
+                                            <Button
+                                                variant={location.pathname === "/admin/banner-management" ? "secondary" : "ghost"}
+                                                className="w-full justify-start text-sm"
+                                                size="sm"
+                                            >
+                                                Banner Management
+                                            </Button>
+                                        </Link>
                                     </div>
                                 )}
                             </div>

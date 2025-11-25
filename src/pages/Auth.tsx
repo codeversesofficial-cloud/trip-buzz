@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { auth } from "@/integrations/firebase/client";
+import { auth, db } from "@/integrations/firebase/client";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, onAuthStateChanged } from "firebase/auth";
+import { doc, setDoc, Timestamp } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -15,31 +16,37 @@ const authSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
   full_name: z.string().min(2, "Name must be at least 2 characters").optional(),
+  phone: z.string().min(10, "Phone number must be at least 10 digits").optional(),
 });
 
 const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [isSigningUp, setIsSigningUp] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
+      // Don't redirect if we're in the middle of signing up
+      if (user && !isSigningUp) {
         navigate("/");
       }
     });
     return () => unsubscribe();
-  }, [navigate]);
+  }, [navigate, isSigningUp]);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setIsSigningUp(true); // Prevent auto-redirect
 
     try {
-      const validation = authSchema.parse({ email, password, full_name: fullName });
+      const validation = authSchema.parse({ email, password, full_name: fullName, phone: phoneNumber });
 
       const userCredential = await createUserWithEmailAndPassword(auth, validation.email, validation.password);
 
@@ -49,12 +56,33 @@ const Auth = () => {
         });
       }
 
-      toast({
-        title: "Account created!",
-        description: "Successfully signed up.",
+      // Create user document in Firestore
+      await setDoc(doc(db, "users", userCredential.user.uid), {
+        email: validation.email,
+        full_name: fullName || "",
+        phone: phoneNumber || "",
+        created_at: Timestamp.now(),
+        role: "user",
+        status: "active",
       });
 
-      navigate("/");
+      // Sign out the user immediately (Firebase auto-logs in after createUser)
+      await auth.signOut();
+
+      // Clear form fields
+      setEmail("");
+      setPassword("");
+      setFullName("");
+      setPhoneNumber("");
+
+      // Show success toast
+      toast({
+        title: "Signup successful!",
+        description: "Please log in to continue.",
+      });
+
+      // Switch to login tab
+      setActiveTab("signin");
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -63,6 +91,7 @@ const Auth = () => {
       });
     } finally {
       setIsLoading(false);
+      setIsSigningUp(false); // Re-enable auto-redirect
     }
   };
 
@@ -93,6 +122,7 @@ const Auth = () => {
   };
 
   const handleTabChange = (value: string) => {
+    setActiveTab(value);
     // Clear all form fields when switching tabs
     setEmail("");
     setPassword("");
@@ -110,7 +140,7 @@ const Auth = () => {
           <CardDescription>Your North India adventure awaits</CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="signin" className="w-full" onValueChange={handleTabChange}>
+          <Tabs value={activeTab} className="w-full" onValueChange={handleTabChange}>
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="signin">Sign In</TabsTrigger>
               <TabsTrigger value="signup">Sign Up</TabsTrigger>
@@ -167,6 +197,17 @@ const Auth = () => {
                     placeholder="your@email.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-phone">Phone Number</Label>
+                  <Input
+                    id="signup-phone"
+                    type="tel"
+                    placeholder="+91 9876543210"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
                     required
                   />
                 </div>

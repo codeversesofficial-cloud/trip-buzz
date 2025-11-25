@@ -192,6 +192,16 @@ const TripDetails = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
+                  {trip.compare_price && trip.compare_price > trip.price_per_person && (
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-lg text-muted-foreground line-through">
+                        ₹{trip.compare_price.toLocaleString()}
+                      </span>
+                      <Badge className="bg-green-500 hover:bg-green-600">
+                        {Math.round(((trip.compare_price - trip.price_per_person) / trip.compare_price) * 100)}% OFF
+                      </Badge>
+                    </div>
+                  )}
                   <div className="text-3xl font-bold text-primary">
                     ₹{trip.price_per_person.toLocaleString()}
                   </div>

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth, db } from "@/integrations/firebase/client";
-import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import { useQuery } from "@tanstack/react-query";
 import {
   Sheet,
@@ -53,21 +53,19 @@ export const ProfileDrawer = ({ open, onOpenChange }: ProfileDrawerProps) => {
   });
 
   const { data: isAdmin } = useQuery({
-    queryKey: ["user-role", session?.user?.uid, session?.user?.email],
-    enabled: !!session?.user?.uid,
+    queryKey: ["user-role", session?.user?.uid, session?.user?.email, profile],
+    enabled: !!session?.user?.uid && !!profile,
     queryFn: async () => {
       if (!session?.user?.uid) return false;
 
       // Hardcoded check for admin
       if (session?.user?.email === "sahildhiman034@gmail.com") return true;
 
-      const q = query(
-        collection(db, "user_roles"),
-        where("user_id", "==", session.user.uid),
-        where("role", "==", "admin")
-      );
-      const querySnapshot = await getDocs(q);
-      return !querySnapshot.empty;
+      // Check the user's role/roles in the users collection
+      if (profile?.role === "admin") return true;
+      if (Array.isArray(profile?.roles) && profile.roles.includes("admin")) return true;
+
+      return false;
     },
   });
 

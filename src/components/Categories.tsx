@@ -3,11 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 import { db } from "@/integrations/firebase/client";
 import { collection, query, orderBy, getDocs, where } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export const Categories = () => {
   const navigate = useNavigate();
+  const [isHovered, setIsHovered] = useState(false);
 
   const { data: categories, error } = useQuery({
     queryKey: ["categories"],
@@ -32,6 +33,42 @@ export const Categories = () => {
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
+  // Create duplicated categories for infinite loop
+  const duplicatedCategories = categories ? [...categories, ...categories, ...categories] : [];
+
+  // Autoscroll effect
+  useEffect(() => {
+    if (!categories || categories.length === 0 || isHovered) return;
+
+    const scrollContainer = scrollContainerRef.current;
+    if (!scrollContainer) return;
+
+    const scrollSpeed = 1; // pixels per frame
+    const scrollInterval = setInterval(() => {
+      if (scrollContainer) {
+        scrollContainer.scrollLeft += scrollSpeed;
+
+        // Calculate the width of one set of categories
+        const singleSetWidth = scrollContainer.scrollWidth / 3;
+
+        // Reset to the middle set when we've scrolled past it
+        if (scrollContainer.scrollLeft >= singleSetWidth * 2) {
+          scrollContainer.scrollLeft = singleSetWidth;
+        }
+      }
+    }, 20);
+
+    return () => clearInterval(scrollInterval);
+  }, [categories, isHovered]);
+
+  // Initialize scroll position to the middle set
+  useEffect(() => {
+    if (scrollContainerRef.current && categories && categories.length > 0) {
+      const singleSetWidth = scrollContainerRef.current.scrollWidth / 3;
+      scrollContainerRef.current.scrollLeft = singleSetWidth;
+    }
+  }, [categories]);
+
   const scroll = (direction: 'left' | 'right') => {
     if (scrollContainerRef.current) {
       const containerWidth = scrollContainerRef.current.offsetWidth;
@@ -51,7 +88,11 @@ export const Categories = () => {
     <div className="py-12">
       <h2 className="mb-8 text-3xl font-bold">Select Trip Category</h2>
 
-      <div className="relative flex items-center">
+      <div
+        className="relative flex items-center"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
         {/* Left Navigation Button - Responsive sizing */}
         <button
           onClick={() => scroll('left')}
@@ -78,9 +119,9 @@ export const Categories = () => {
               }
             `}
           </style>
-          {categories?.map((category) => (
+          {duplicatedCategories?.map((category, index) => (
             <div
-              key={category.id}
+              key={`${category.id}-${index}`}
               className="flex-shrink-0 w-full md:w-[calc(50%-6px)] lg:w-[calc(25%-12px)]"
               style={{
                 scrollSnapAlign: 'start'

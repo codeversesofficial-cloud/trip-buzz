@@ -122,7 +122,6 @@ export const Footer = () => {
                                 {page.title}
                             </Link>
                         ))}
-                        <Link to="/site-credits" className="hover:text-white">Site Credits</Link>
                     </div>
                 </div>
             </div>

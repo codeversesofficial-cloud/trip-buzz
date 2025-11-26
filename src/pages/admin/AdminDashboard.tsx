@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth, db } from "@/integrations/firebase/client";
 import { onAuthStateChanged } from "firebase/auth";
-import { collection, getDocs, query, where, limit } from "firebase/firestore";
+import { collection, getDocs, query, where, limit, doc, getDoc } from "firebase/firestore";
 import { useQuery } from "@tanstack/react-query";
 import { AdminLayout } from "@/components/layouts/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -93,23 +93,34 @@ const AdminDashboard = () => {
   }, [navigate]);
 
   const { data: isAdmin, isLoading: isAdminLoading } = useQuery({
-    queryKey: ["is-admin", userId],
+    queryKey: ["is-admin", userId, userEmail],
     enabled: !!userId,
     queryFn: async () => {
+      if (!userId) return false;
+
       // Hardcoded check for the specific admin email
       if (userEmail === "sahildhiman034@gmail.com") {
         return true;
       }
 
-      const usersRef = collection(db, "users");
-      const q = query(usersRef, where("uid", "==", userId), where("role", "==", "admin"));
-      const querySnapshot = await getDocs(q);
+      // Get user document directly by ID
+      const userDocRef = doc(db, "users", userId);
+      const userDoc = await getDoc(userDocRef);
 
-      if (querySnapshot.empty) {
+      if (!userDoc.exists()) {
         navigate("/");
         return false;
       }
-      return true;
+
+      const userData = userDoc.data();
+
+      // Check both role field and roles array
+      if (userData.role === "admin") return true;
+      if (Array.isArray(userData.roles) && userData.roles.includes("admin")) return true;
+
+      // Not an admin, redirect
+      navigate("/");
+      return false;
     },
   });
 

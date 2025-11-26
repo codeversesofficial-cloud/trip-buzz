@@ -14,3 +14,7 @@ declare module 'react-quill' {
     }
     export default class ReactQuill extends React.Component<ReactQuillProps> { }
 }
+
+interface Window {
+    recaptchaVerifier: any;
+}

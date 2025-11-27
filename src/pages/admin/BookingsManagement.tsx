@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth, db } from "@/integrations/firebase/client";
-import { onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged, getAuth } from "firebase/auth";
 import { collection, getDocs, query, orderBy, doc, updateDoc, getDoc, addDoc } from "firebase/firestore";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AdminLayout } from "@/components/layouts/AdminLayout";
@@ -141,18 +141,40 @@ const BookingsManagement = () => {
               const bookingData = bookingDoc.data();
               console.log("✅ Booking data fetched:", bookingData);
 
-              // Fetch user email
+              // Fetch user email - Check multiple sources
+              console.log("🔍 Looking for user with ID:", userId);
+              let userEmail = null;
+
+              // Try users collection first
               const userDoc = await getDoc(doc(db, "users", userId));
-              const userEmail = userDoc.exists() ? userDoc.data().email : null;
-              console.log("📬 User email:", userEmail);
+              console.log("👤 User document exists?", userDoc.exists());
+
+              if (userDoc.exists() && userDoc.data().email) {
+                userEmail = userDoc.data().email;
+                console.log("✅ Got email from users collection:", userEmail);
+              }
+
+              // If not found, try profiles collection (legacy)
+              if (!userEmail) {
+                console.log("🔍 Trying profiles collection...");
+                const profileDoc = await getDoc(doc(db, "profiles", userId));
+                if (profileDoc.exists() && profileDoc?.data().email) {
+                  userEmail = profileDoc.data().email;
+                  console.log("✅ Got email from profiles collection:", userEmail);
+                }
+              }
+
+              console.log("📬 Final user email:", userEmail);
 
               // Fetch trip details
               const tripDoc = await getDoc(doc(db, "trips", bookingData.trip_id));
               const tripData = tripDoc.exists() ? tripDoc.data() : {};
               console.log("🗺️ Trip data:", tripData);
 
-              // Fetch schedule details
-              const scheduleDoc = await getDoc(doc(db, "trip_schedules", bookingData.trip_schedule_id));
+              // Fetch schedule details - FIX: Use schedule_id instead of trip_schedule_id
+              const scheduleId = bookingData.schedule_id || bookingData.trip_schedule_id;
+              console.log("🔍 Schedule ID:", scheduleId);
+              const scheduleDoc = await getDoc(doc(db, "trip_schedules", scheduleId));
               const scheduleData = scheduleDoc.exists() ? scheduleDoc.data() : {};
               console.log("📅 Schedule data:", scheduleData);
 

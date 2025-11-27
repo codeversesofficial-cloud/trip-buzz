@@ -13,7 +13,7 @@ import {
     ChevronDown,
     ChevronRight,
     Image,
-    Star,
+    Settings,
     User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -134,7 +134,8 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
         { icon: ShoppingBag, label: "Bookings", path: "/admin/bookings", hasNotification: unreadBookings },
         { icon: Users, label: "Users", path: "/admin/users" },
         { icon: List, label: "Catalog", path: "/admin/categories" },
-        { icon: Star, label: "Reviews", path: "/admin/reviews" },
+        { icon: Settings, label: "Configuration", path: "/admin/configuration" },
+        { icon: Image, label: "Banners", path: "/admin/banners" },
     ];
 
     const cmsSubItems = [

@@ -25,6 +25,7 @@ import CompanyPage from "./pages/CompanyPage";
 import NotFound from "./pages/NotFound";
 import ProfileManagement from "./pages/admin/ProfileManagement";
 import BannerManagement from "./pages/admin/BannerManagement";
+import Configuration from "./pages/admin/Configuration";
 import ReviewsManagement from "./pages/admin/ReviewsManagement";
 
 const queryClient = new QueryClient();
@@ -50,6 +51,8 @@ const App = () => (
           <Route path="/admin/trips" element={<TripsManagement />} />
           <Route path="/admin/bookings" element={<BookingsManagement />} />
           <Route path="/admin/users" element={<UsersManagement />} />
+          <Route path="/admin/banners" element={<BannerManagement />} />
+          <Route path="/admin/configuration" element={<Configuration />} />
           <Route path="/admin/categories" element={<CategoryManagement />} />
           <Route path="/admin/footer-pages" element={<FooterPagesManagement />} />
           <Route path="/admin/company" element={<CompanyManagement />} />

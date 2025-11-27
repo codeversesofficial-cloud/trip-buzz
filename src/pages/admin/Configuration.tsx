@@ -36,14 +36,10 @@ const Configuration = () => {
 
     // Mail Configuration State
     const [mailConfig, setMailConfig] = useState({
-        type: "",
-        driver: "",
-        host: "",
-        port: "",
-        username: "",
-        password: "",
-        encryption: "",
-        from: "",
+        provider: "sendgrid", // Default to SendGrid
+        apiKey: "",
+        fromEmail: "",
+        fromName: "",
     });
 
     useEffect(() => {
@@ -271,7 +267,7 @@ const Configuration = () => {
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <div className="space-y-1">
                                 <CardTitle className="text-base font-medium">Mail Configuration</CardTitle>
-                                <CardDescription>View and update your SMTP credentials.</CardDescription>
+                                <CardDescription>View and update your SendGrid API key for sending emails.</CardDescription>
                             </div>
                             <Button
                                 size="sm"
@@ -284,75 +280,43 @@ const Configuration = () => {
                             </Button>
                         </CardHeader>
                         <CardContent className="space-y-4 pt-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label>Mail Type</Label>
-                                    <Input
-                                        value={mailConfig.type}
-                                        onChange={(e) => setMailConfig({ ...mailConfig, type: e.target.value })}
-                                        placeholder="e.g. smtp"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Mail Driver</Label>
-                                    <Input
-                                        value={mailConfig.driver}
-                                        onChange={(e) => setMailConfig({ ...mailConfig, driver: e.target.value })}
-                                        placeholder="e.g. smtp"
-                                    />
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label>Mail Host</Label>
-                                    <Input
-                                        value={mailConfig.host}
-                                        onChange={(e) => setMailConfig({ ...mailConfig, host: e.target.value })}
-                                        placeholder="e.g. smtp.example.com"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Mail Port</Label>
-                                    <Input
-                                        value={mailConfig.port}
-                                        onChange={(e) => setMailConfig({ ...mailConfig, port: e.target.value })}
-                                        placeholder="e.g. 587"
-                                    />
-                                </div>
+                            <div className="space-y-2">
+                                <Label>EMAIL PROVIDER</Label>
+                                <Select
+                                    value={mailConfig.provider}
+                                    onValueChange={(value) => setMailConfig({ ...mailConfig, provider: value })}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select provider" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="sendgrid">SendGrid</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
                             <div className="space-y-2">
-                                <Label>Mail Username</Label>
-                                <Input
-                                    value={mailConfig.username}
-                                    onChange={(e) => setMailConfig({ ...mailConfig, username: e.target.value })}
-                                    placeholder="e.g. user@example.com"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Mail Password</Label>
+                                <Label>API KEY</Label>
                                 <PasswordInput
-                                    value={mailConfig.password}
-                                    onChange={(e) => setMailConfig({ ...mailConfig, password: e.target.value })}
-                                    placeholder="Enter Mail Password"
+                                    value={mailConfig.apiKey}
+                                    onChange={(e) => setMailConfig({ ...mailConfig, apiKey: e.target.value })}
+                                    placeholder="Enter SendGrid API Key"
                                 />
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label>Mail Encryption</Label>
-                                    <Input
-                                        value={mailConfig.encryption}
-                                        onChange={(e) => setMailConfig({ ...mailConfig, encryption: e.target.value })}
-                                        placeholder="e.g. tls"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Mail From</Label>
-                                    <Input
-                                        value={mailConfig.from}
-                                        onChange={(e) => setMailConfig({ ...mailConfig, from: e.target.value })}
-                                        placeholder="e.g. noreply@example.com"
-                                    />
-                                </div>
+                            <div className="space-y-2">
+                                <Label>FROM EMAIL</Label>
+                                <Input
+                                    value={mailConfig.fromEmail}
+                                    onChange={(e) => setMailConfig({ ...mailConfig, fromEmail: e.target.value })}
+                                    placeholder="e.g. noreply@tripbuzz.com"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>FROM NAME</Label>
+                                <Input
+                                    value={mailConfig.fromName}
+                                    onChange={(e) => setMailConfig({ ...mailConfig, fromName: e.target.value })}
+                                    placeholder="e.g. TripBuzz"
+                                />
                             </div>
                         </CardContent>
                     </Card>

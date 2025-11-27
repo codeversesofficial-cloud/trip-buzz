@@ -34,9 +34,13 @@ export const SearchBar = () => {
         <div className="relative">
           <Calendar className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
           <Input
-            placeholder="Check In"
-            className="pl-10"
-            type="date"
+            placeholder="DD/MM/YYYY"
+            className="pl-10 uppercase"
+            type="text"
+            onFocus={(e) => (e.target.type = "date")}
+            onBlur={(e) => {
+              if (!e.target.value) e.target.type = "text";
+            }}
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
           />
@@ -44,9 +48,13 @@ export const SearchBar = () => {
         <div className="relative">
           <Calendar className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
           <Input
-            placeholder="Check Out"
-            className="pl-10"
-            type="date"
+            placeholder="DD/MM/YYYY"
+            className="pl-10 uppercase"
+            type="text"
+            onFocus={(e) => (e.target.type = "date")}
+            onBlur={(e) => {
+              if (!e.target.value) e.target.type = "text";
+            }}
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
           />

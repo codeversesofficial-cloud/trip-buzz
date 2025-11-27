@@ -26,6 +26,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { sendBookingConfirmationEmail } from "@/services/emailService";
+import { format as formatDate } from "date-fns";
 
 const BookingsManagement = () => {
   const navigate = useNavigate();
@@ -127,6 +129,88 @@ const BookingsManagement = () => {
           link: "/dashboard",
           created_at: new Date().toISOString()
         });
+
+        // Send confirmation email when booking is approved
+        if (status === "confirmed") {
+          try {
+            console.log("📧 Starting email send process for booking:", bookingId);
+
+            // Fetch full booking details for email
+            const bookingDoc = await getDoc(doc(db, "bookings", bookingId));
+            if (bookingDoc.exists()) {
+              const bookingData = bookingDoc.data();
+              console.log("✅ Booking data fetched:", bookingData);
+
+              // Fetch user email
+              const userDoc = await getDoc(doc(db, "users", userId));
+              const userEmail = userDoc.exists() ? userDoc.data().email : null;
+              console.log("📬 User email:", userEmail);
+
+              // Fetch trip details
+              const tripDoc = await getDoc(doc(db, "trips", bookingData.trip_id));
+              const tripData = tripDoc.exists() ? tripDoc.data() : {};
+              console.log("🗺️ Trip data:", tripData);
+
+              // Fetch schedule details
+              const scheduleDoc = await getDoc(doc(db, "trip_schedules", bookingData.trip_schedule_id));
+              const scheduleData = scheduleDoc.exists() ? scheduleDoc.data() : {};
+              console.log("📅 Schedule data:", scheduleData);
+
+              if (userEmail) {
+                console.log("📤 Sending email to:", userEmail);
+                const emailResult = await sendBookingConfirmationEmail(userEmail, {
+                  bookingId: bookingId,
+                  tripName: tripData.title || tripTitle || "Your Trip",
+                  destination: tripData.location || "Unknown",
+                  startDate: scheduleData.start_date ? formatDate(scheduleData.start_date.toDate ? scheduleData.start_date.toDate() : new Date(scheduleData.start_date), "MMM dd, yyyy") : "TBD",
+                  endDate: scheduleData.end_date ? formatDate(scheduleData.end_date.toDate ? scheduleData.end_date.toDate() : new Date(scheduleData.end_date), "MMM dd, yyyy") : "TBD",
+                  scheduleName: scheduleData.name || "Standard Schedule",
+                  travelers: bookingData.travelers || [],
+                  totalAmount: bookingData.total_amount || 0
+                });
+                console.log("📧 Email send result:", emailResult);
+
+                if (emailResult.success) {
+                  console.log("✅ Email sent successfully!");
+                  toast({
+                    title: "Email Sent",
+                    description: "Confirmation email sent to the user.",
+                  });
+                } else {
+                  console.error("❌ Email failed:", emailResult.message);
+                  toast({
+                    variant: "destructive",
+                    title: "Email Failed",
+                    description: `Failed to send confirmation email: ${emailResult.message}`,
+                  });
+                }
+              } else {
+                console.error("❌ No user email found for userId:", userId);
+                toast({
+                  variant: "destructive",
+                  title: "Email Skipped",
+                  description: "No user email found to send confirmation.",
+                });
+              }
+            } else {
+              console.error("❌ Booking document not found:", bookingId);
+              toast({
+                variant: "destructive",
+                title: "Email Skipped",
+                description: "Booking details not found for sending confirmation email.",
+              });
+            }
+          } catch (emailError: any) {
+            console.error("❌ Failed to send confirmation email:", emailError);
+            console.error("Error details:", emailError.message);
+            toast({
+              variant: "destructive",
+              title: "Email Error",
+              description: `An error occurred while sending confirmation email: ${emailError.message}`,
+            });
+            // Don't fail the entire operation if email fails
+          }
+        }
       }
     },
     onSuccess: () => {

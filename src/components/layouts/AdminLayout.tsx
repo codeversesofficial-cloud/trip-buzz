@@ -15,6 +15,7 @@ import {
     Image,
     Settings,
     User,
+    Calendar,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { auth, db } from "@/integrations/firebase/client";
@@ -132,6 +133,7 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
         { icon: LayoutDashboard, label: "Dashboard", path: "/admin/dashboard" },
         { icon: Mountain, label: "Trips", path: "/admin/trips" },
         { icon: ShoppingBag, label: "Bookings", path: "/admin/bookings", hasNotification: unreadBookings },
+        { icon: Calendar, label: "Scheduled Trips", path: "/admin/scheduled-trips" },
         { icon: Users, label: "Users", path: "/admin/users" },
         { icon: List, label: "Catalog", path: "/admin/categories" },
         { icon: Settings, label: "Configuration", path: "/admin/configuration" },

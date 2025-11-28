@@ -27,6 +27,8 @@ import ProfileManagement from "./pages/admin/ProfileManagement";
 import BannerManagement from "./pages/admin/BannerManagement";
 import Configuration from "./pages/admin/Configuration";
 import ReviewsManagement from "./pages/admin/ReviewsManagement";
+import ScheduledTrips from "./pages/admin/ScheduledTrips";
+import TripAttendance from "./pages/admin/TripAttendance";
 
 const queryClient = new QueryClient();
 
@@ -59,6 +61,8 @@ const App = () => (
           <Route path="/admin/profile" element={<ProfileManagement />} />
           <Route path="/admin/banner-management" element={<BannerManagement />} />
           <Route path="/admin/reviews" element={<ReviewsManagement />} />
+          <Route path="/admin/scheduled-trips" element={<ScheduledTrips />} />
+          <Route path="/admin/trip-attendance/:scheduleId" element={<TripAttendance />} />
           <Route path="/page/:slug" element={<FooterPage />} />
           <Route path="/company/:slug" element={<CompanyPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

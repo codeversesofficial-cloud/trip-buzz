@@ -22,10 +22,10 @@ interface BookingEmailData {
 
 const generateBookingConfirmationEmail = (data: BookingEmailData): string => {
   const travelerListHTML = data.travelers.map((t, i) => `
-    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #d4d7e0;">
-      <span style="color: #52555f; font-size: 14px;">${i + 1}. ${t.name}</span>
-      <span style="font-weight: 600; color: #0C1A25; font-size: 14px;">${t.age} yrs / ${t.gender}</span>
-    </div>
+    <tr>
+      <td style="padding: 8px 0; border-bottom: 1px dashed #d4d7e0; color: #52555f; font-size: 14px;">${i + 1}. ${t.name}</td>
+      <td style="padding: 8px 0; border-bottom: 1px dashed #d4d7e0; font-weight: 600; color: #0C1A25; font-size: 14px; text-align: right;">${t.age} yrs / ${t.gender}</td>
+    </tr>
   `).join("");
 
   return `<!DOCTYPE html>
@@ -36,79 +36,120 @@ const generateBookingConfirmationEmail = (data: BookingEmailData): string => {
 </head>
 <body style="margin: 0; padding: 0; background: #eef1f7; font-family: 'Inter', Arial, sans-serif;">
 
-  <div style="max-width: 760px; margin: 25px auto; background: #ffffff; border-radius: 16px; box-shadow: 0 6px 25px rgba(0,0,0,0.08); overflow: hidden;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #eef1f7;">
+    <tr>
+      <td align="center" style="padding: 25px 0;">
+        
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width: 600px; background: #ffffff; border-radius: 16px; box-shadow: 0 6px 25px rgba(0,0,0,0.08); overflow: hidden;">
+          
+          <!-- HEADER -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #0C1A25 0%, #2DBE60 100%); padding: 45px 20px; text-align: center; color: #ffffff;">
+              <h1 style="margin: 0; font-size: 28px; letter-spacing: 0.4px; font-weight: 700;">
+                Booking Confirmed!
+              </h1>
+              <p style="margin-top: 10px; font-size: 15px; opacity: 0.95;">
+                Your journey has been secured successfully
+              </p>
+            </td>
+          </tr>
 
-    <!-- HEADER -->
-    <div style="background: linear-gradient(135deg, #0C1A25 0%, #2DBE60 100%); padding: 45px 20px; text-align: center; color: #ffffff; border-radius: 16px 16px 0 0;">
-      <h1 style="margin: 0; font-size: 32px; letter-spacing: 0.4px; font-weight: 700;">
-        🎉 Booking Confirmed!
-      </h1>
-      <p style="margin-top: 10px; font-size: 15px; opacity: 0.95;">
-        Your journey has been secured successfully
-      </p>
-    </div>
+          <!-- CONTENT -->
+          <tr>
+            <td style="padding: 30px;">
+              
+              <h2 style="font-size: 18px; font-weight: 600; margin-bottom: 15px; color: #0C1A25; border-left: 4px solid #2DBE60; padding-left: 10px;">Booking Summary</h2>
 
-    <!-- BOOKING DETAILS -->
-    <div style="padding: 30px;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background: #ffffff; border-radius: 12px; border: 1px solid #e8e9ee; border-collapse: separate; border-spacing: 0;">
+                <tr>
+                  <td style="padding: 20px;">
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                      <tr>
+                        <td style="padding: 8px 0; border-bottom: 1px dashed #d4d7e0; color: #52555f; font-size: 14px; width: 40%;">Booking ID</td>
+                        <td style="padding: 8px 0; border-bottom: 1px dashed #d4d7e0; font-weight: 600; color: #0C1A25; font-size: 14px; text-align: right;">${data.bookingId}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 8px 0; border-bottom: 1px dashed #d4d7e0; color: #52555f; font-size: 14px;">Trip Name</td>
+                        <td style="padding: 8px 0; border-bottom: 1px dashed #d4d7e0; font-weight: 600; color: #0C1A25; font-size: 14px; text-align: right;">${data.tripName}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 8px 0; border-bottom: 1px dashed #d4d7e0; color: #52555f; font-size: 14px;">Destination</td>
+                        <td style="padding: 8px 0; border-bottom: 1px dashed #d4d7e0; font-weight: 600; color: #0C1A25; font-size: 14px; text-align: right;">${data.destination}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 8px 0; border-bottom: 1px dashed #d4d7e0; color: #52555f; font-size: 14px;">Travel Dates</td>
+                        <td style="padding: 8px 0; border-bottom: 1px dashed #d4d7e0; font-weight: 600; color: #0C1A25; font-size: 14px; text-align: right;">${data.startDate} → ${data.endDate}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 8px 0; color: #52555f; font-size: 14px;">Total Amount</td>
+                        <td style="padding: 8px 0; font-weight: 600; color: #0C1A25; font-size: 14px; text-align: right;">₹${data.totalAmount.toLocaleString()}</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
 
-      <h2 style="font-size: 18px; font-weight: 600; margin-bottom: 12px; color: #0C1A25; border-left: 4px solid #2DBE60; padding-left: 10px;">Booking Summary</h2>
+              <h2 style="font-size: 18px; font-weight: 600; margin-top: 30px; margin-bottom: 15px; color: #0C1A25; border-left: 4px solid #2DBE60; padding-left: 10px;">Traveler Details</h2>
 
-      <div style="background: #ffffff; border-radius: 12px; border: 1px solid #e8e9ee; padding: 22px; box-shadow: 0 3px 15px rgba(0,0,0,0.06);">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background: #ffffff; border-radius: 12px; border: 1px solid #e8e9ee; border-collapse: separate; border-spacing: 0;">
+                <tr>
+                  <td style="padding: 20px;">
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                      ${travelerListHTML}
+                    </table>
+                  </td>
+                </tr>
+              </table>
 
-        <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #d4d7e0;">
-          <span style="color: #52555f; font-size: 14px;">Booking ID</span>
-          <span style="font-weight: 600; color: #0C1A25; font-size: 14px;">${data.bookingId}</span>
-        </div>
+              <!-- QR CODE SECTION -->
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-top: 30px; background: #f9fefc; border: 1px solid #cceedd; border-radius: 12px;">
+                <tr>
+                  <td style="padding: 25px; text-align: center;">
+                    <h3 style="margin: 0; font-size: 18px; font-weight: 600; margin-bottom: 15px;">Your Boarding Pass</h3>
+                    <img src="cid:qrcode_image" width="150" height="150" alt="QR Code" style="display: block; margin: 0 auto; border: 0;" />
+                    <p style="margin-top: 10px; color:#555; font-size: 14px;">Show this QR Code at check-in</p>
+                  </td>
+                </tr>
+              </table>
 
-        <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #d4d7e0;">
-          <span style="color: #52555f; font-size: 14px;">Trip Name</span>
-          <span style="font-weight: 600; color: #0C1A25; font-size: 14px;">${data.tripName}</span>
-        </div>
+            </td>
+          </tr>
 
-        <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #d4d7e0;">
-          <span style="color: #52555f; font-size: 14px;">Destination</span>
-          <span style="font-weight: 600; color: #0C1A25; font-size: 14px;">${data.destination}</span>
-        </div>
+          <!-- FOOTER -->
+          <tr>
+            <td style="text-align: center; font-size: 13px; color: #7d7f8d; padding: 20px; background: #f3f4f9;">
+              Thank you for choosing us. We wish you a wonderful journey!  
+              <br/>  
+              — Team TripBuzz
+            </td>
+          </tr>
 
-        <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #d4d7e0;">
-          <span style="color: #52555f; font-size: 14px;">Travel Dates</span>
-          <span style="font-weight: 600; color: #0C1A25; font-size: 14px;">${data.startDate} → ${data.endDate}</span>
-        </div>
+        </table>
 
-        <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: none;">
-          <span style="color: #52555f; font-size: 14px;">Total Amount</span>
-          <span style="font-weight: 600; color: #0C1A25; font-size: 14px;">₹${data.totalAmount.toLocaleString()}</span>
-        </div>
-
-      </div>
-
-      <!-- TRAVELER LIST -->
-      <h2 style="font-size: 18px; font-weight: 600; margin-top: 30px; margin-bottom: 12px; color: #0C1A25; border-left: 4px solid #2DBE60; padding-left: 10px;">Traveler Details</h2>
-
-      <div style="background: #ffffff; border-radius: 12px; border: 1px solid #e8e9ee; padding: 22px; box-shadow: 0 3px 15px rgba(0,0,0,0.06);">
-        ${travelerListHTML}
-      </div>
-
-      <!-- QR CODE SECTION -->
-      <div style="margin-top: 30px; text-align: center; background: #f9fefc; border: 1px solid #cceedd; border-radius: 12px; padding: 25px 0;">
-        <h3 style="margin: 0; font-size: 18px; font-weight: 600; margin-bottom: 15px;">Your Boarding Pass</h3>
-        <img src="cid:qrcode_image" width="150" height="150" alt="QR Code" style="display: block; margin: 0 auto;" />
-        <p style="margin-top: 8px; color:#555; font-size: 14px;">Show this QR Code at check-in</p>
-      </div>
-
-    </div>
-
-    <!-- FOOTER -->
-    <div style="text-align: center; font-size: 13px; color: #7d7f8d; padding: 18px; background: #f3f4f9;">
-      Thank you for choosing us. We wish you a wonderful journey!  
-      <br/>  
-      — Team TripBuzz
-    </div>
-
-  </div>
+      </td>
+    </tr>
+  </table>
 
 </body>
 </html>`;
+};
+
+const generateBookingConfirmationText = (data: BookingEmailData): string => {
+  return `
+Booking Confirmation
+
+Booking ID: ${data.bookingId}
+Trip: ${data.tripName}
+Destination: ${data.destination}
+Dates: ${data.startDate} - ${data.endDate}
+Total Amount: ₹${data.totalAmount.toLocaleString()}
+
+Travelers:
+${data.travelers.map((t, i) => `${i + 1}. ${t.name} (${t.age} yrs / ${t.gender})`).join("\n")}
+
+Thank you for choosing us!
+Team TripBuzz
+  `.trim();
 };
 
 export const sendBookingEmail = functions.https.onRequest(async (req, res) => {
@@ -183,10 +224,13 @@ export const sendBookingEmail = functions.https.onRequest(async (req, res) => {
       `src="${qrCodeUrl}"`
     );
 
+    const emailText = generateBookingConfirmationText(bookingData);
+
     await sgMail.send({
       to: recipientEmail,
       from: { email: config.fromEmail, name: config.fromName },
-      subject: `🎉 Booking Confirmed - ${bookingData.tripName}`,
+      subject: `Your Booking Is Confirmed – ${bookingData.startDate} ${bookingData.tripName}`,
+      text: emailText,
       html: emailHtml,
     });
 
